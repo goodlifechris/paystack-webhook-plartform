@@ -1,0 +1,100 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Type check
+      run: npm run check
+
+    - name: Build
+      run: npm run build
+
+    - name: Create artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifact
+        path: |
+          dist/
+          package.json
+          package-lock.json
+          Procfile
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      
+    - name: Download artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: build-artifact
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        
+    - name: Install production dependencies
+      run: npm ci --production
+      
+    # Uncomment and configure the appropriate deployment step
+    
+    # Deploy to Heroku
+    # - name: Deploy to Heroku
+    #  uses: akhileshns/heroku-deploy@v3.12.14
+    #  with:
+    #    heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+    #    heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+    #    heroku_email: ${{ secrets.HEROKU_EMAIL }}
+    #    healthcheck: "https://${{ secrets.HEROKU_APP_NAME }}.herokuapp.com/health"
+    
+    # Deploy to Digital Ocean
+    # - name: Deploy to Digital Ocean
+    #  uses: appleboy/ssh-action@master
+    #  with:
+    #    host: ${{ secrets.DO_HOST }}
+    #    username: ${{ secrets.DO_USERNAME }}
+    #    key: ${{ secrets.DO_SSH_KEY }}
+    #    script: |
+    #      cd /var/www/paystack-webhook
+    #      git pull
+    #      npm ci --production
+    #      npm run build
+    #      pm2 restart paystack-webhook
+    
+    # Deploy to AWS Elastic Beanstalk
+    # - name: Generate deployment package
+    #  run: zip -r deploy.zip dist node_modules package.json package-lock.json Procfile
+    # - name: Deploy to AWS Elastic Beanstalk
+    #  uses: einaregilsson/beanstalk-deploy@v21
+    #  with:
+    #    aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    #    aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    #    application_name: ${{ secrets.AWS_EB_APP_NAME }}
+    #    environment_name: ${{ secrets.AWS_EB_ENV_NAME }}
+    #    version_label: "version-${{ github.run_number }}"
+    #    region: ${{ secrets.AWS_EB_REGION }}
+    #    deployment_package: deploy.zip
