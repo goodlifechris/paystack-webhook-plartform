@@ -21,7 +21,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const reference = req.body.data?.reference || `unknown-${Date.now()}`;
       const eventType = req.body.event || 'unknown';
       
+      logger.info(`Body ${eventType} webhook with reference ${JSON.stringify(req.body)}`);
       logger.info(`Received ${eventType} webhook with reference ${reference}`);
+      logger.info(`Headers ${eventType} webhook with reference ${req.headers['x-paystack-signature']}`);
       
       // Store the webhook event
       const webhookEvent = await storage.createWebhookEvent({

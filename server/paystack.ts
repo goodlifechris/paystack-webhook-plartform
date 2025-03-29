@@ -11,7 +11,8 @@ export function validatePaystackSignature(signature: string, payload: any): bool
   if (!signature) return false;
   
   const secretKey = process.env.PAYSTACK_SECRET_KEY;
-  
+  console.error('PAYSTACK_SECRET_KEY environment variable not set',secretKey);
+
   if (!secretKey) {
     console.error('PAYSTACK_SECRET_KEY environment variable not set');
     return false;
